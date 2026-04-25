@@ -12,6 +12,7 @@ numpy==1.26.4
 pandas-ta==0.3.14b0
 langchain==0.2.1
 langchain-anthropic==0.1.15
+langgraph==0.2.4
 anthropic==0.28.0
 newsapi-python==0.2.7
 apscheduler==3.10.4
