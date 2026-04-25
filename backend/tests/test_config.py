@@ -20,8 +20,11 @@ def test_settings_load_from_env(monkeypatch):
     assert s.min_confidence_to_trade == 0.65
 
 
-def test_settings_missing_required_field():
+def test_settings_missing_required_field(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("NEWS_API_KEY", raising=False)
     from pydantic import ValidationError
     from app.config import Settings
-    with pytest.raises((ValidationError, Exception)):
-        Settings(anthropic_api_key=None, database_url=None, news_api_key=None)
+    with pytest.raises(ValidationError):
+        Settings()
