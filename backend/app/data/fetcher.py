@@ -1,10 +1,14 @@
 import json
+import logging
+import math
 from datetime import datetime
 from typing import Optional
 
 import pytz
 import redis
 import yfinance as yf
+
+logger = logging.getLogger(__name__)
 
 WATCHLIST: list[str] = [
     "INFY.NS", "TCS.NS", "WIPRO.NS",
@@ -42,12 +46,21 @@ def fetch_price(symbol: str, r: redis.Redis) -> Optional[dict]:
     if cached:
         return json.loads(cached)
 
-    ticker = yf.Ticker(symbol)
-    hist = ticker.history(period="2d", interval="15m")
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="2d", interval="15m")
+    except Exception as e:
+        logger.warning("yfinance fetch failed for %s: %s", symbol, e)
+        return None
+
     if hist.empty:
         return None
 
     latest = hist.iloc[-1]
+    price_fields = [latest["Close"], latest["Open"], latest["High"], latest["Low"]]
+    if any(math.isnan(float(v)) for v in price_fields):
+        return None
+
     data = {
         "symbol": symbol,
         "close": float(latest["Close"]),

@@ -39,7 +39,7 @@ def test_fetch_price_cached(monkeypatch):
         result = fetch_price("INFY.NS", r)
         mock_ticker.assert_not_called()
 
-    assert result["close"] == 1234.0
+    assert result == cached
 
 
 def test_fetch_price_sets_cache():
@@ -53,6 +53,15 @@ def test_fetch_price_sets_cache():
     assert r.exists("price:INFY.NS")
     ttl = r.ttl("price:INFY.NS")
     assert 800 < ttl <= 900
+    stored = json.loads(r.get("price:INFY.NS"))
+    assert stored == {
+        "symbol": "INFY.NS",
+        "close": 1500.0,
+        "open": 1490.0,
+        "high": 1510.0,
+        "low": 1485.0,
+        "volume": 1000000,
+    }
 
 
 def test_watchlist_has_15_stocks():
@@ -65,6 +74,26 @@ def test_sectors_cover_all_tradeable():
     assert set(all_sector_stocks) == set(tradeable)
 
 
-def test_is_market_open_returns_bool():
-    result = is_market_open()
-    assert isinstance(result, bool)
+def test_is_market_open_during_hours(monkeypatch):
+    import pytz
+    from datetime import datetime
+
+    IST = pytz.timezone("Asia/Kolkata")
+
+    # Monday 10:00 IST — market open
+    market_open_time = IST.localize(datetime(2024, 1, 8, 10, 0, 0))
+    monkeypatch.setattr("app.data.fetcher.datetime",
+                        type("MockDatetime", (), {"now": staticmethod(lambda tz: market_open_time)}))
+    assert is_market_open() is True
+
+    # Monday 16:00 IST — market closed
+    market_closed_time = IST.localize(datetime(2024, 1, 8, 16, 0, 0))
+    monkeypatch.setattr("app.data.fetcher.datetime",
+                        type("MockDatetime", (), {"now": staticmethod(lambda tz: market_closed_time)}))
+    assert is_market_open() is False
+
+    # Saturday 11:00 IST — weekend
+    weekend_time = IST.localize(datetime(2024, 1, 6, 11, 0, 0))
+    monkeypatch.setattr("app.data.fetcher.datetime",
+                        type("MockDatetime", (), {"now": staticmethod(lambda tz: weekend_time)}))
+    assert is_market_open() is False
