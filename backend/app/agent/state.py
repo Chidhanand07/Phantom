@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, TypedDict
+from dataclasses import dataclass
+from typing import Literal, Optional, TypedDict
 
 from app.portfolio.portfolio import PortfolioSnapshot
 from app.data.signals import TechnicalSignals

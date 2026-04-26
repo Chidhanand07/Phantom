@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.agent.state import PhantomState, TradeMemoryData
 from app.data.fetcher import fetch_all_prices, WATCHLIST
-from app.data.signals import compute_signals
+from app.data.signals import compute_signals, TechnicalSignals
 from app.data.sentiment import get_all_sentiments
 from app.portfolio.portfolio import get_portfolio_snapshot
 from app.portfolio.models import TradeMemory, Position
@@ -16,10 +16,12 @@ def _get_active_memories(db: Session) -> list[TradeMemoryData]:
 
     memories = []
     for sym in held_symbols:
-        row = db.execute(
+        rows = db.execute(
             select(TradeMemory)
             .where(TradeMemory.stock == sym, TradeMemory.thesis_status == "active")
-        ).scalar_one_or_none()
+            .order_by(TradeMemory.timestamp.desc())
+        ).scalars().all()
+        row = rows[0] if rows else None
         if row:
             memories.append(TradeMemoryData(
                 id=row.id,
@@ -41,7 +43,7 @@ def build_phantom_state(db: Session, r: redis.Redis) -> PhantomState:
     prices = fetch_all_prices(r)
     portfolio = get_portfolio_snapshot(db, prices)
 
-    signals: dict = {}
+    signals: dict[str, TechnicalSignals] = {}
     for sym in WATCHLIST:
         if sym == "^NSEI":
             continue

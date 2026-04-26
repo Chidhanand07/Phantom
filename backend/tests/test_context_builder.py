@@ -1,5 +1,5 @@
 import fakeredis
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 from app.agent.context_builder import build_phantom_state
 from app.agent.state import PhantomState
 from app.portfolio.models import Portfolio
@@ -40,12 +40,15 @@ def test_build_phantom_state_includes_signals(db):
     r = fakeredis.FakeRedis()
 
     with patch("app.agent.context_builder.fetch_all_prices", return_value={}):
-        with patch("app.agent.context_builder.compute_signals", return_value=_make_signals("INFY.NS")):
+        with patch("app.agent.context_builder.compute_signals", return_value=_make_signals("INFY.NS")) as mock_sig:
             with patch("app.agent.context_builder.get_all_sentiments", return_value={"INFY.NS": 0.5}):
                 state = build_phantom_state(db, r)
 
     assert "INFY.NS" in state["signals"]
     assert state["signals"]["INFY.NS"].rsi_value == 45.0
+    assert mock_sig.call_count == 14  # all WATCHLIST symbols except ^NSEI
+    called_symbols = [c.args[0] for c in mock_sig.call_args_list]
+    assert "^NSEI" not in called_symbols
 
 
 def test_build_phantom_state_sentiment_included(db):
