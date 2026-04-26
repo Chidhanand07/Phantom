@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     next_public_ws_url: str = "ws://localhost:8000/ws/feed"
     next_public_api_url: str = "http://localhost:8000"
 
-    model_config = {"env_file": ".env", "case_sensitive": False}
+    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "case_sensitive": False}
 
 
 settings = Settings()

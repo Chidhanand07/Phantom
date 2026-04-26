@@ -1,5 +1,4 @@
 import pytest
-import os
 
 
 def test_settings_load_from_env(monkeypatch):
@@ -8,13 +7,12 @@ def test_settings_load_from_env(monkeypatch):
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379")
     monkeypatch.setenv("NEWS_API_KEY", "test-key")
 
-    import importlib
-    import app.config as cfg_module
-    importlib.reload(cfg_module)
     from app.config import Settings
     s = Settings()
 
     assert s.anthropic_api_key == "sk-ant-test"
+    assert s.database_url == "postgresql://u:p@localhost/db"
+    assert s.redis_url == "redis://localhost:6379"
     assert s.max_position_pct == 0.20
     assert s.max_positions == 5
     assert s.min_confidence_to_trade == 0.65
