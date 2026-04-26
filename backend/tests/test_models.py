@@ -31,9 +31,10 @@ def test_trade_creation(db):
     )
     db.add(t)
     db.commit()
-    db.refresh(t)
+    db.expire(t)
     assert t.id is not None
-    assert t.action == "BUY"
+    assert isinstance(t.id, str) and len(t.id) == 36
+    assert t.executed_at is not None
 
 
 def test_trade_memory_creation(db):
@@ -49,9 +50,10 @@ def test_trade_memory_creation(db):
     )
     db.add(m)
     db.commit()
-    db.refresh(m)
+    db.expire(m)
     assert m.thesis_status == "active"
-    assert m.id is not None
+    assert isinstance(m.id, str) and len(m.id) == 36
+    assert m.timestamp is not None
 
 
 def test_agent_log_creation(db):
