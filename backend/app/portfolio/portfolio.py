@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.portfolio.models import Portfolio, Position
@@ -34,7 +34,7 @@ class PortfolioSnapshot:
 
 
 def get_portfolio_snapshot(db: Session, prices: dict[str, dict]) -> PortfolioSnapshot:
-    portfolio = db.execute(select(Portfolio)).scalar_one_or_none()
+    portfolio = db.execute(select(Portfolio)).scalars().first()
     cash = float(portfolio.cash) if portfolio else 100000.0
 
     positions_rows = db.execute(select(Position)).scalars().all()
