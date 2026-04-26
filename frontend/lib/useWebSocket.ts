@@ -31,7 +31,7 @@ export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
           setMarketOpen(msg.market_open);
         }
         onMessageRef.current(msg);
-      } catch (_e) {
+      } catch {
         // ignore malformed messages
       }
     };
