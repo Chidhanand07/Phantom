@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from datetime import datetime, timezone
@@ -8,14 +9,15 @@ from pytz import timezone as tz
 from sqlalchemy.orm import Session
 
 from app.agent.context_builder import build_phantom_state
+from app.agent.graph import build_graph
 from app.config import settings
 from app.database import SessionLocal
-from app.data.fetcher import is_market_open
+from app.data.fetcher import is_market_open, fetch_all_prices
 from app.portfolio.models import AgentLog
+from app.portfolio.portfolio import get_portfolio_snapshot
 
 logger = logging.getLogger(__name__)
 
-# Module-level Redis client — reuses connection pool across scheduler cycles
 _redis_client: redis_lib.Redis | None = None
 
 
@@ -43,8 +45,25 @@ def run_agent_cycle() -> None:
 
         logger.info("Starting agent cycle")
         state = build_phantom_state(db, r)
-        logger.info("Context built — portfolio cash: %.2f", state["portfolio"].cash)
-        log.action_taken = "CONTEXT_BUILT"
+        graph = build_graph(db, r)
+        result = graph.invoke(state)
+
+        decision = result.get("decision")
+        narration = result.get("narration", "Phantom is watching the markets.")
+
+        log.action_taken = decision.action if decision else "HOLD"
+        log.symbol = decision.symbol if decision and decision.symbol else None
+
+        if decision and decision.action != "HOLD":
+            try:
+                from app.websocket.broadcast import broadcast_trade
+                prices = fetch_all_prices(r)
+                portfolio = get_portfolio_snapshot(db, prices)
+                asyncio.run(broadcast_trade(narration, decision, portfolio))
+            except Exception as e:
+                logger.warning("WS broadcast failed: %s", e)
+
+        logger.info("Cycle complete: %s %s", log.action_taken, log.symbol or "")
 
     except Exception as exc:
         logger.exception("Agent cycle failed: %s", exc)
