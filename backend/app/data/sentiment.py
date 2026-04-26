@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+import math
 
 import feedparser
 import redis
@@ -36,8 +36,17 @@ _SENTIMENT_PROMPT = ChatPromptTemplate.from_template(
     "Return ONLY the number, nothing else.\n\nHeadlines:\n{headlines}\n\nScore:"
 )
 
+_llm = ChatAnthropic(
+    model="claude-haiku-4-5-20251001",
+    api_key=settings.anthropic_api_key,
+    max_tokens=10,
+)
+_SENTIMENT_CHAIN = _SENTIMENT_PROMPT | _llm
+
 
 def _clamp_score(v: float) -> float:
+    if math.isnan(v):
+        return 0.0
     return max(-1.0, min(1.0, v))
 
 
@@ -67,17 +76,15 @@ def fetch_headlines_rss(symbol: str) -> list[str]:
 def score_sentiment(symbol: str, headlines: list[str]) -> float:
     if not headlines:
         return 0.0
-    llm = ChatAnthropic(
-        model="claude-haiku-4-5-20251001",
-        api_key=settings.anthropic_api_key,
-        max_tokens=10,
-    )
-    chain = _SENTIMENT_PROMPT | llm
     company = COMPANY_NAMES.get(symbol, symbol)
     try:
-        result = chain.invoke({"company": company, "headlines": "\n".join(headlines)})
-        return _clamp_score(float(result.content.strip()))
-    except (ValueError, AttributeError, Exception) as e:
+        result = _SENTIMENT_CHAIN.invoke({"company": company, "headlines": "\n".join(headlines)})
+        raw = result.content.strip().splitlines()[0].strip()
+        return _clamp_score(float(raw))
+    except (ValueError, AttributeError) as e:
+        logger.warning("Sentiment score parse failed for %s: %s", symbol, e)
+        return 0.0
+    except Exception as e:
         logger.warning("Sentiment scoring failed for %s: %s", symbol, e)
         return 0.0
 
