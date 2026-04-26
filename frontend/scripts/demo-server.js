@@ -1,6 +1,6 @@
 const { WebSocketServer } = require("ws");
 
-const PORT = 8001;
+const PORT = 9001;
 const wss = new WebSocketServer({ port: PORT });
 
 const messages = [
