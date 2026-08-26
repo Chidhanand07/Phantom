@@ -1,14 +1,38 @@
+# ── Secrets ──────────────────────────────────────────────────────────────────
 .env
+.env.local
+.env.*.local
+
+# ── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
+*.pyd
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
 venv/
-node_modules/
-.next/
 *.egg-info/
 dist/
-.DS_Store
+build/
+
+# ── Node / Next.js ────────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# ── Docker ───────────────────────────────────────────────────────────────────
 pgdata/
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── AI tool artifacts (not part of the project) ───────────────────────────────
+.claude/
 .superpowers/
+phantom_CLAUDE .md
+phantom_implementation .html
+
