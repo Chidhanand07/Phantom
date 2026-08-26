@@ -1,6 +1,6 @@
 <div align="center">
 
-# 👻 Phantom
+#  Phantom
 
 ### An Autonomous AI Portfolio Manager for Indian Equity Markets
 
