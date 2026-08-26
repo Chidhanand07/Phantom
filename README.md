@@ -1,63 +1,115 @@
-# Phantom 👻
+<div align="center">
 
-**An autonomous AI portfolio manager for Indian equity markets.**
+# 👻 Phantom
 
-Phantom watches 14 NSE-listed stocks across 5 sectors, runs a multi-step reasoning pipeline powered by a large language model, and makes buy/sell/hold decisions every 15 minutes during market hours — all on a paper portfolio. Every decision is narrated in plain English and streamed live to a real-time dashboard.
+### An Autonomous AI Portfolio Manager for Indian Equity Markets
 
-> "A portfolio that thinks for itself."
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![LangGraph](https://img.shields.io/badge/LangGraph-0.2-FF6B6B?style=flat-square)](https://langchain-ai.github.io/langgraph)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
 
----
+<br/>
 
-## How it works
+> *"A portfolio that thinks for itself."*
 
-Every 15 minutes (Mon–Fri, 9:15–15:30 IST), Phantom:
-
-1. **Fetches** live OHLCV prices and computes technical signals (RSI-14, MACD, SMA-20, volume) for all 14 stocks
-2. **Reads** news headlines and scores sentiment per stock using an LLM
-3. **Reasons** — writes 2–3 paragraphs of analysis like a fund manager would
-4. **Decides** — outputs a structured BUY / SELL / HOLD decision with confidence score
-5. **Risk-checks** — validates position size ≤20%, cash reserve ≥10%, max 5 positions, sector exposure ≤40%
-6. **Narrates** — translates the decision into plain English (no jargon)
-7. **Remembers** — stores an investment thesis with target price and stop loss
-8. **Executes** — updates the paper portfolio and broadcasts the trade live via WebSocket
-
-```
-APScheduler (15 min)
-  └─► Context Builder (prices + signals + sentiment + memories)
-        └─► LangGraph Pipeline
-              reason → decide → risk_check → narrate → remember → execute
-                                    │
-                                    └─► WebSocket → Next.js Dashboard
-```
+</div>
 
 ---
 
-## Stack
+## Overview
+
+Phantom is a fully autonomous paper-trading agent built for NSE-listed Indian equities. It runs a multi-step AI reasoning pipeline every 15 minutes during market hours — fetching live prices, scoring news sentiment, reasoning like a fund manager, checking risk constraints, and executing trades — all without human intervention. Every decision is narrated in plain English and streamed live to a real-time dashboard.
+
+---
+
+## How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   APScheduler  (every 15 min)                   │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Context Builder                             │
+│          Prices · Technical Signals · News Sentiment            │
+│                  Investment Memories (DB)                       │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    LangGraph Pipeline                           │
+│                                                                 │
+│   reason ──► decide ──► risk_check ──► narrate                 │
+│                              │              │                   │
+│                           (blocked)      remember               │
+│                              │              │                   │
+│                             END          execute                │
+└─────────────────────────────────────────────────────┬───────────┘
+                                                      │
+                          ┌───────────────────────────┤
+                          ▼                           ▼
+                   PostgreSQL                   WebSocket
+                   (trades, memory)          (live dashboard)
+```
+
+Each cycle, Phantom:
+
+1. **Fetches** live OHLCV data and computes RSI-14, MACD, SMA-20, and volume signals for 14 NSE stocks
+2. **Scores** news sentiment per stock via LLM-powered headline analysis (NewsAPI + Google RSS fallback)
+3. **Reasons** — writes 2–3 paragraphs of analysis considering signals, sentiment, and stored theses
+4. **Decides** — outputs a structured `BUY / SELL / HOLD` with confidence score and rationale
+5. **Risk-checks** — enforces position limits, cash reserve, max positions, and sector concentration
+6. **Narrates** — explains the decision in plain English, no financial jargon
+7. **Remembers** — persists an investment thesis with target price and stop loss
+8. **Executes** — updates the paper portfolio and broadcasts the trade live over WebSocket
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.12 · FastAPI · Uvicorn |
-| AI Pipeline | LangChain · LangGraph |
-| LLM | Anthropic API |
-| Database | PostgreSQL 16 · SQLAlchemy 2 · Alembic |
-| Cache | Redis 7 |
-| Scheduling | APScheduler 3 |
-| Market Data | yfinance |
-| News | NewsAPI · Google RSS (fallback) |
-| Frontend | Next.js 14 · TypeScript · Tailwind CSS · Recharts |
-| Infrastructure | Docker Compose |
+| **Backend** | Python 3.12 · FastAPI · Uvicorn |
+| **AI Pipeline** | LangChain 0.2 · LangGraph 0.2 |
+| **LLM** | Anthropic API |
+| **Database** | PostgreSQL 16 · SQLAlchemy 2 · Alembic |
+| **Cache** | Redis 7 |
+| **Scheduler** | APScheduler 3 |
+| **Market Data** | yfinance |
+| **News** | NewsAPI · Google RSS (fallback) |
+| **Frontend** | Next.js 14 · TypeScript · Tailwind CSS · Recharts |
+| **Infrastructure** | Docker Compose |
 
 ---
 
-## Watchlist
+## Watchlist (14 Stocks · 5 Sectors)
 
-| Sector | Stocks |
+| Sector | Symbols |
 |---|---|
-| IT | INFY · TCS · WIPRO |
-| Banking | HDFCBANK · ICICIBANK · SBIN |
-| Energy | RELIANCE · ONGC |
-| Auto | MARUTI · TATAMOTORS · M&M |
-| FMCG | HINDUNILVR · ITC · NESTLEIND |
+| 🖥️ IT | INFY · TCS · WIPRO |
+| 🏦 Banking | HDFCBANK · ICICIBANK · SBIN |
+| ⚡ Energy | RELIANCE · ONGC |
+| 🚗 Auto | MARUTI · TATAMOTORS · M&M |
+| 🛒 FMCG | HINDUNILVR · ITC · NESTLEIND |
+
+---
+
+## Risk Controls
+
+Phantom enforces hard constraints before every trade:
+
+| Rule | Limit |
+|---|---|
+| Max position size | 20% of portfolio |
+| Max sector exposure | 40% of portfolio |
+| Minimum cash reserve | 10% of portfolio |
+| Max simultaneous positions | 5 |
+| Minimum LLM confidence to trade | 65% |
 
 ---
 
@@ -65,31 +117,37 @@ APScheduler (15 min)
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- Node.js 20+
-- An [Anthropic API key](https://console.anthropic.com/)
-- A [NewsAPI key](https://newsapi.org/) (free tier works)
+- [Docker](https://docker.com/) & Docker Compose
+- [Node.js](https://nodejs.org/) 20+
+- [Anthropic API key](https://console.anthropic.com/)
+- [NewsAPI key](https://newsapi.org/) *(free tier works)*
 
-### 1. Clone and configure
+### 1 · Configure environment
 
 ```bash
-git clone https://github.com/<your-username>/phantom.git
+git clone https://github.com/chidanandh/phantom.git
 cd phantom
 
 cp .env.example .env
-# Edit .env — fill in ANTHROPIC_API_KEY and NEWS_API_KEY
 ```
 
-### 2. Start the backend
+Open `.env` and fill in your keys:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+NEWS_API_KEY=your-newsapi-key-here
+```
+
+### 2 · Start the backend
 
 ```bash
 docker compose up --build -d
 ```
 
-On first run, initialise the database and seed the portfolio:
+First-time database setup:
 
 ```bash
-# Run migrations
+# Apply schema migrations
 docker compose exec api alembic upgrade head
 
 # Seed a ₹1,00,000 paper portfolio
@@ -99,13 +157,13 @@ from app.portfolio.models import Portfolio
 db = SessionLocal()
 db.add(Portfolio(cash=100000))
 db.commit()
-print('Portfolio seeded')
+print('Portfolio seeded.')
 "
 ```
 
-The API is now live at **http://localhost:8001**
+API is live at → **http://localhost:8001**
 
-### 3. Start the frontend
+### 3 · Start the frontend
 
 ```bash
 cd frontend
@@ -113,35 +171,37 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:3000** — the dashboard connects automatically.
+Dashboard is live at → **http://localhost:3000**
+
+The agent will begin trading automatically at the next 15-minute interval during market hours (Mon–Fri 9:15–15:30 IST).
 
 ---
 
-## Configuration (`.env`)
+## Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | — | Anthropic API key (required) |
-| `NEWS_API_KEY` | — | NewsAPI key (required) |
-| `DATABASE_URL` | `postgresql://phantom:phantom@db:5432/phantom` | Postgres connection |
-| `REDIS_URL` | `redis://redis:6379` | Redis connection |
+| `ANTHROPIC_API_KEY` | *(required)* | Anthropic API key |
+| `NEWS_API_KEY` | *(required)* | NewsAPI.org key |
+| `DATABASE_URL` | `postgresql://phantom:phantom@db:5432/phantom` | PostgreSQL connection string |
+| `REDIS_URL` | `redis://redis:6379` | Redis connection string |
 | `INITIAL_PORTFOLIO_VALUE` | `100000` | Starting cash in ₹ |
-| `MAX_POSITION_PCT` | `0.20` | Max single position as % of portfolio |
-| `MAX_SECTOR_PCT` | `0.40` | Max sector exposure as % of portfolio |
+| `MAX_POSITION_PCT` | `0.20` | Max single-stock allocation |
+| `MAX_SECTOR_PCT` | `0.40` | Max sector allocation |
 | `MIN_CASH_PCT` | `0.10` | Minimum cash reserve |
-| `MAX_POSITIONS` | `5` | Max simultaneous open positions |
-| `AGENT_CYCLE_MINUTES` | `15` | How often the agent runs (minutes) |
-| `MIN_CONFIDENCE_TO_TRADE` | `0.65` | Minimum LLM confidence to execute a trade |
+| `MAX_POSITIONS` | `5` | Max open positions |
+| `AGENT_CYCLE_MINUTES` | `15` | Agent run frequency |
+| `MIN_CONFIDENCE_TO_TRADE` | `0.65` | Min LLM confidence to act |
 
 ---
 
-## API Endpoints
+## API Reference
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/health` | Health check |
-| `GET` | `/portfolio` | Current portfolio snapshot |
-| `GET` | `/portfolio/trades` | Trade history (last 50) |
+| `GET` | `/portfolio` | Live portfolio snapshot with P&L |
+| `GET` | `/portfolio/trades` | Trade history (latest 50) |
 | `GET` | `/signals/{symbol}` | Technical signals for a stock |
 | `GET` | `/memories` | All stored investment theses |
 | `WS` | `/ws/feed` | Live agent feed (trades + heartbeat) |
@@ -154,45 +214,54 @@ Open **http://localhost:3000** — the dashboard connects automatically.
 phantom/
 ├── backend/
 │   ├── app/
-│   │   ├── agent/           # LangGraph pipeline
-│   │   │   ├── context_builder.py
-│   │   │   ├── graph.py     # Node wiring
-│   │   │   ├── memory.py    # Investment thesis CRUD
-│   │   │   ├── nodes.py     # reason / decide / risk / narrate
-│   │   │   ├── prompts.py   # LLM prompt templates
-│   │   │   └── state.py     # PhantomState TypedDict
-│   │   ├── api/             # REST routes
-│   │   ├── data/            # yfinance · signals · sentiment
-│   │   ├── portfolio/       # Models · executor · snapshot
-│   │   ├── scheduler/       # APScheduler job
-│   │   ├── websocket/       # ConnectionManager · broadcast
+│   │   ├── agent/
+│   │   │   ├── context_builder.py   # Assembles agent state
+│   │   │   ├── graph.py             # LangGraph node wiring
+│   │   │   ├── memory.py            # Investment thesis CRUD
+│   │   │   ├── nodes.py             # reason / decide / risk / narrate
+│   │   │   ├── prompts.py           # LLM prompt templates
+│   │   │   └── state.py             # PhantomState TypedDict
+│   │   ├── api/                     # REST route handlers
+│   │   ├── data/                    # Prices · signals · sentiment
+│   │   ├── portfolio/               # Models · executor · snapshots
+│   │   ├── scheduler/               # APScheduler job
+│   │   ├── websocket/               # ConnectionManager · broadcast
 │   │   ├── config.py
 │   │   ├── database.py
 │   │   └── main.py
-│   ├── alembic/             # DB migrations
-│   ├── tests/               # 13 test modules
+│   ├── alembic/                     # Database migrations
+│   ├── tests/                       # 13 test modules
 │   └── requirements.txt
 ├── frontend/
 │   ├── app/
-│   │   └── components/      # AgentFeed · Portfolio · SignalBoard · etc.
-│   ├── lib/                 # API helpers · types · WebSocket hook
+│   │   └── components/              # AgentFeed · Portfolio · SignalBoard · TradeHistory · PerfChart · MemoryViewer
+│   ├── lib/                         # API helpers · types · WebSocket hook
 │   └── package.json
 ├── docker-compose.yml
-└── .env.example
+├── .env.example
+└── README.md
 ```
 
 ---
 
-## Running tests
+## Running Tests
 
 ```bash
 cd backend
 pip install -r requirements.txt
-pytest
+pytest -v
 ```
 
 ---
 
 ## License
 
-MIT
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+Built by **Chidanandh R** · [chidhanand07d@gmail.com](mailto:chidhanand07d@gmail.com)
+
+</div>
